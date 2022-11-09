@@ -2,7 +2,7 @@
 <title>Yaml Converter</title>
 <script src="lib/codemirror.js"></script>
 <style>
-    .border {border: 1px solid black;};
+    .border {border: 1px solid #777;};
 </style>
 <script src="lib/yaml.js"></script>
 <script type="text/javascript" src="lib/yamlparser.js"></script>
@@ -102,22 +102,36 @@
         }
         outputEditor.getDoc().setValue(result)
     }
-
-    function clearOutput() {
-        outputEditor.getDoc().setValue('')
-    }
 </script>
 
-Input
+<h3>Input (YAML)</h3>
+<p>Paste your conduktor-platform.yaml then Convert it to environment variables below:</p>
 <div class="border">
-    <textarea id="input"></textarea>
+    <textarea id="input">
+organization:
+  name: default
+
+clusters:
+  - id: cluster-id
+    name: John's cluster
+    color: "#E70000"
+    connection_timeout: 3600
+    properties: |
+      security.protocol=SASL_SSL
+      sasl.mechanism=PLAIN
+      sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username='username' password='password';
+    kafkaConnects:
+      - id: my connect: "awesome"
+        url: http://localhost:8081
+        security:
+          username: john
+          password: doe
+    </textarea>
 </div>
 <br/>
-<button onclick="convert()">Convert</button>
-<button onclick="clearOutput()">Clear Output</button>
+<button onclick="convert()">Convert to .env</button>
 <br>
-  Output
-  <br>
+  <h3>Output (.env)</h3>
   <div class="border">
     <textarea id="output"></textarea>
   </div>
