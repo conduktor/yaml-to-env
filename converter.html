@@ -1,0 +1,140 @@
+<!doctype html>
+<title>Yaml Converter</title>
+<script src="lib/codemirror.js"></script>
+<style>
+    .border {border: 1px solid black;};
+</style>
+<script src="lib/yaml.js"></script>
+<script type="text/javascript" src="lib/yamlparser.js"></script>
+<link rel="stylesheet" href="lib/codemirror.css">
+
+<script type="text/javascript">
+    const PREFIX = 'CDK_'
+
+    let outputEditor = null;
+    let inputEditor = null;
+
+    function isObject(A) {
+        return (typeof A === "object" || typeof A === 'function') && (A !== null)
+    }
+
+    // Escape " and remove trailing/leading spaces for values
+    function escapeValue(val) {
+        if (val == null) {
+            return ''
+        }
+        return val.toString().replaceAll('"', '\\"').trim()
+    }
+
+    // Remove underscores from key names
+    function translateKey(key) {
+        return key.replaceAll('_', '')
+    }
+
+    // Handles printing values that are part of an array
+    function handleArray(baseName, key, value) {
+        result = ''
+        baseName += translateKey(key.toUpperCase()) + '_'
+        for (let index in value) {
+            let id = parseInt(index) + 1
+            for (let attr in value[index]) {
+                let val = value[index][attr]
+                if (Array.isArray(val)) {
+                    result += handleArray(baseName + id + '_', attr, val)
+                }
+                else if (isObject(val)) {
+                    result += handleObject(baseName + id + '_', attr, val)
+                }
+                else {
+                    result += baseName + id + "_" + translateKey(attr.toUpperCase()) + '=' + '"' + escapeValue(val) + '"\n'
+                }
+            }
+        }
+        return result;
+    }
+
+    // Handles printing values that are part of an object
+    function handleObject(baseName, key, value) {
+        result = ''
+        baseName += translateKey(key.toUpperCase()) + '_'
+        for (let attr in value) {
+            let val = value[attr]
+            if (Array.isArray(val)) {
+                result += handleArray(baseName, attr, val)
+            }
+            else if (isObject(val)) {
+                result += handleObject(baseName, attr, val)
+            }
+            else {
+                result += baseName + translateKey(attr.toUpperCase()) + '=' + '"' + escapeValue(val) + '"\n'
+            }
+        }
+        return result
+    }
+
+    // Converts the YAML into a Javascript object
+    // The Javascript object is then processed to generate the env file content.
+    // Arrays - are handled by adding the Array index to the name, e.g. CDK_CLUSTER_1, CDK_CLUSTER_2
+    // Objects - are handled by adding the attribute name, e.g. CDK_CLUSTER_1_ATTR1, CDK_CLUSTER_2_ATTR2
+    // This uses recursion to build out the env keys
+    function convert() {
+        let nativeObject = null
+        try {
+            nativeObject = YAML.parse(inputEditor.getDoc().getValue());
+        }
+        catch(ex) {
+            outputEditor.getDoc().setValue("ERROR! parsing YAML - " + ex.message)
+            return
+        }
+        let result = ''
+        let baseName = PREFIX
+        for (let key in nativeObject) {
+            let val = nativeObject[key]
+            if (Array.isArray(val)) {
+                result += handleArray(baseName, key, val)
+            }
+            else if (isObject(val)) {
+                result += handleObject(baseName, key, val)
+            }
+            else {
+                result += baseName + translateKey(key.toUpperCase()) + '=' + '"' + escapeValue(val) + '"\n'
+            }
+        }
+        outputEditor.getDoc().setValue(result)
+    }
+
+    function clearOutput() {
+        outputEditor.getDoc().setValue('')
+    }
+</script>
+
+Input
+<div class="border">
+    <textarea id="input"></textarea>
+</div>
+<br/>
+<button onclick="convert()">Convert</button>
+<button onclick="clearOutput()">Clear Output</button>
+<br>
+  Output
+  <br>
+  <div class="border">
+    <textarea id="output"></textarea>
+  </div>
+
+  <script>
+    inputEditor = CodeMirror.fromTextArea(document.getElementById("input"), {
+        lineNumbers: true,
+        mode: "yaml"
+    });
+
+    outputEditor = CodeMirror.fromTextArea(document.getElementById("output"), {
+        lineNumbers: true,
+        mode: "text",
+        readOnly: true
+    });
+
+    outputEditor.setSize(null, "400");
+    inputEditor.setSize(null, "400");
+
+  </script>
