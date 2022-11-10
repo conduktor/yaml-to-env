@@ -23,7 +23,10 @@
         if (val == null) {
             return ''
         }
-        return val.toString().replaceAll('"', '\\"').trim()
+        return val.toString()
+                .replaceAll('"', '\\"')
+                .replaceAll('\n', '\\n')
+                .trim()
     }
 
     // Remove underscores from key names
