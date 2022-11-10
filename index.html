@@ -36,7 +36,7 @@
         result = ''
         baseName += translateKey(key.toUpperCase()) + '_'
         for (let index in value) {
-            let id = parseInt(index) + 1
+            let id = parseInt(index)
             for (let attr in value[index]) {
                 let val = value[index][attr]
                 if (Array.isArray(val)) {
